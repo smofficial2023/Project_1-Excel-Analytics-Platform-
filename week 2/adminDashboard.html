@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Google Fonts for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js library for creating charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Main Dashboard Container */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 31, 84, 0.1);
+            overflow: hidden;
+        }
+
+        /* Dashboard Header */
+        .dashboard-header {
+            background-color: #4a90e2;
+            color: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Main Content Area */
+        .dashboard-content {
+            padding: 20px;
+            overflow-x: auto; /* Allows horizontal scrolling on small screens */
+        }
+
+        /* User Table Styling */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .user-table th, .user-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eef0f4;
+            vertical-align: middle;
+        }
+
+        .user-table thead th {
+            background-color: #f9fafc;
+            font-weight: 600;
+            font-size: 14px;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        .user-table tbody tr:hover {
+            background-color: #f6f9ff;
+        }
+
+        /* Specific Column Styles */
+        .user-table .username {
+            font-weight: 500;
+            color: #4a90e2;
+        }
+        
+        .user-table .file-list {
+            font-size: 13px;
+            color: #666;
+            max-width: 200px; /* Prevent long lists from stretching the table */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Chart Container in Table */
+        .chart-cell {
+            min-width: 250px;
+        }
+        .reach-chart-container {
+            width: 100%;
+            height: 50px; /* Fixed height for the small chart */
+        }
+
+        /* Delete Button */
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .delete-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #999;
+            transition: fill 0.3s ease;
+        }
+
+        .delete-btn:hover svg {
+            fill: #e53935; /* Red on hover */
+        }
+
+        /* Custom Confirmation Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-content p {
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        #confirm-delete-btn {
+            background-color: #e53935;
+            color: white;
+        }
+        #confirm-delete-btn:hover {
+            background-color: #c62828;
+        }
+
+        #cancel-delete-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        #cancel-delete-btn:hover {
+            background-color: #bdbdbd;
+        }
+
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .dashboard-header h1 {
+                font-size: 20px;
+            }
+            .user-table th, .user-table td {
+                padding: 12px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>User Management</h1>
+        </header>
+        <main class="dashboard-content">
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Storage Used</th>
+                        <th>Files</th>
+                        <th>1-Month Reach</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    <!-- User data will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Custom Modal for Delete Confirmation -->
+    <div id="delete-confirmation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this user account?</p>
+            <div class="modal-actions">
+                <button id="cancel-delete-btn">Cancel</button>
+                <button id="confirm-delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+    <a href="UserReach.html" class="cta-button">Learn More About User Reach</a>
+</body>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // --- Sample Data ---
+            const sampleUsers = [
+                { id: 1, username: 'Siddarth Das', storage: '19 KB', files: ['report_q1.pdf', 'data_analysis.xlsx', 'project_alpha.docx'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 500 + 100)) },
+                { id: 2, username: 'Kushal Singh', storage: '2 MB', files: ['marketing_plan.pptx', 'budget.csv'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 800 + 200)) },
+                { id: 3, username: 'Abhishek Kar', storage: '10 KB', files: ['video_edit_final.mp4', 'audio_track.mp3', 'thumbnails/'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 300 + 50)) },
+                { id: 4, username: 'Motimoy Das', storage: '100 KB', files: ['notes.txt', 'research_paper.pdf'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 1200 + 400)) },
+                { id: 5, username: 'Aryan Jha', storage: '30 KB', files: ['app_backup.zip', 'database.sql'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 600 + 150)) },
+                { id: 6, username: 'Sowmita Mondal', storage: '8.9 KB', files: ['design_assets.ai', 'logo.svg', 'brand_guide.pdf'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 950 + 300)) },
+                { id: 7, username: 'Ankur Tribedi', storage: '10.1 MB', files: ['design_assets.ai', 'logo.svg', 'brand_guide.pdf'], reach: Array.from({length: 30}, () => Math.floor(Math.random() * 950 + 300)) },
+            ];
+
+            const tableBody = document.getElementById('user-table-body');
+            
+            // --- Function to populate the table ---
+            function populateTable() {
+                sampleUsers.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-user-id', user.id);
+                    row.innerHTML = `
+                        <td class="username">${user.username}</td>
+                        <td>${user.storage}</td>
+                        <td class="file-list" title="${user.files.join(', ')}">${user.files.join(', ')}</td>
+                        <td class="chart-cell">
+                            <div class="reach-chart-container">
+                                <canvas id="chart-${user.id}"></canvas>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="delete-btn" data-user-id="${user.id}">
+                                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // --- Function to create the charts ---
+            function createCharts() {
+                sampleUsers.forEach(user => {
+                    const ctx = document.getElementById(`chart-${user.id}`).getContext('2d');
+                    
+                    const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+                    gradient.addColorStop(0, 'rgba(74, 144, 226, 0.5)');
+                    gradient.addColorStop(1, 'rgba(74, 144, 226, 0)');
+
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({length: 30}, (_, i) => i + 1), // Labels for 30 days
+                            datasets: [{
+                                data: user.reach,
+                                borderColor: '#4a90e2',
+                                backgroundColor: gradient,
+                                borderWidth: 2,
+                                pointRadius: 0, // Hide points
+                                fill: true,
+                                tension: 0.4 // Makes the line curved
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            },
+                            scales: {
+                                x: { display: false },
+                                y: { display: false }
+                            }
+                        }
+                    });
+                });
+            }
+
+            // --- Delete functionality ---
+            const modal = document.getElementById('delete-confirmation-modal');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            const cancelBtn = document.getElementById('cancel-delete-btn');
+            let userRowToDelete = null;
+
+            tableBody.addEventListener('click', function(event) {
+                const deleteButton = event.target.closest('.delete-btn');
+                if (deleteButton) {
+                    const userId = deleteButton.dataset.userId;
+                    userRowToDelete = document.querySelector(`tr[data-user-id='${userId}']`);
+                    modal.classList.add('visible');
+                }
+            });
+
+            // Hide modal on cancel
+            cancelBtn.addEventListener('click', () => {
+                modal.classList.remove('visible');
+                userRowToDelete = null;
+            });
+
+            // Confirm deletion
+            confirmBtn.addEventListener('click', () => {
+                if (userRowToDelete) {
+                    userRowToDelete.style.transition = 'opacity 0.5s';
+                    userRowToDelete.style.opacity = '0';
+                    setTimeout(() => {
+                         userRowToDelete.remove();
+                    }, 500);
+                }
+                modal.classList.remove('visible');
+            });
+
+            // Close modal if clicking outside the content
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                     modal.classList.remove('visible');
+                     userRowToDelete = null;
+                }
+            });
+
+            // --- Initial calls ---
+            populateTable();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
+
